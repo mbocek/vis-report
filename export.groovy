@@ -12,8 +12,8 @@ import jxl.*
 import jxl.write.*
 
 // Parameters to report. Limits for time period.
-def fromString = '2014-12-01'
-def toString = '2014-12-31'
+def fromString = '2015-01-01'
+def toString = '2015-01-31'
 def dateFrom = Date.parse('yyyy-MM-dd', fromString)
 def dateTo = Date.parse('yyyy-MM-dd', toString)
 
@@ -51,7 +51,7 @@ def queryDetail = "select ob.datum, ob.druh, ob.ev_cislo, ob.pocet, ji.nazev, ji
             "and ji.datum = ob.datum " +
             "and ji.druh = ob.druh " +
             "and ob.ev_cislo = :evCislo " + 
-            "order by ob.datum asc"
+            "order by ob.datum asc, ob.druh, ob.datcas_obj desc"
 // query to get summary for orders between period and for specified person
 def querySum = "select ji.cena1, sum(ob.pocet) as pocet " + 
             "from objednav as ob, jidelnic as ji " + 
@@ -61,8 +61,12 @@ def querySum = "select ji.cena1, sum(ob.pocet) as pocet " +
             "and ob.ev_cislo = :evCislo " + 
             "group by ji.cena1"
             
+def sheetSummary = workbook.createSheet('Summary', -1)
+def sheetSummaryRow = 0;
+def total = 0.0
 
 sql.eachRow(queryAllPersons) { stravnik ->
+    def name = stravnik.jmeno
     def evCislo = stravnik.ev_cislo
     def sheet = workbook.createSheet(stravnik.jmeno, evCislo.intValue())
     sheet.addCell(new Label(0, 0, "Datum")) 
@@ -73,19 +77,28 @@ sql.eachRow(queryAllPersons) { stravnik ->
     sheet.addCell(new Label(5, 0, "Suma"))
     
     try {
+        def subTotal = 0.0
         int row = 0
-        sql.eachRow(queryDetail, [fromDate: from, toDate: to, evCislo: evCislo]) {
-            int col = 0
-            row++
-            int formulaRow = row+1
-            sheet.addCell(new DateTime(col++, row, it.datum, dateFormat))
-            sheet.addCell(new Label(col++, row, it.druh))
-            sheet.addCell(new Label(col++, row, it.nazev))
-            sheet.addCell(new Number(col++, row, it.pocet))
-            sheet.addCell(new Number(col++, row, it.cena1))
-            //Create a formula for adding cells
-            Formula sum = new Formula(col++, row, "D" + formulaRow + "*E" + formulaRow);
-            sheet.addCell(sum);
+        def lastDatum = null
+        def lastDruh = null
+        sql.rows(queryDetail, [fromDate: from, toDate: to, evCislo: evCislo]).each {
+            if (lastDatum == null || lastDruh == null || lastDatum != it.datum || lastDruh != it.druh) {
+                int col = 0
+                row++
+                int formulaRow = row+1
+                sheet.addCell(new DateTime(col++, row, it.datum, dateFormat))
+                sheet.addCell(new Label(col++, row, it.druh))
+                sheet.addCell(new Label(col++, row, it.nazev))
+                sheet.addCell(new Number(col++, row, it.pocet))
+                sheet.addCell(new Number(col++, row, it.cena1))
+                //Create a formula for adding cells
+                Formula sum = new Formula(col++, row, "D" + formulaRow + "*E" + formulaRow);
+                sheet.addCell(sum);
+                total += it.pocet * it.cena1 
+                subTotal += it.pocet * it.cena1 
+            }
+            lastDatum = it.datum
+            lastDruh = it.druh
         }
         
         if (row > 0) {
@@ -94,39 +107,34 @@ sql.eachRow(queryAllPersons) { stravnik ->
             sheet.addCell(new Label(0, row, "Celkova suma:"))
             Formula sum = new Formula(5, row, "SUM(F2:F" + row + ")")
             sheet.addCell(sum)
-            
-            int startRow = row += 5
-            sql.eachRow(querySum, [fromDate: from, toDate: to, evCislo: evCislo]) {
-                row++
-                int formulaRow = row+1
-                sheet.mergeCells(0, row, 2, row)
-                sheet.addCell(new Label(0, row, "Cena za j\u00EDdlo a po\u010Det kus\u016F:"))
-                sheet.addCell(new Number(3, row, it.pocet))
-                sheet.addCell(new Number(4, row, it.cena1))
-                sum = new Formula(5, row, "D" + formulaRow + "*E" + formulaRow)
-                sheet.addCell(sum)
-            }
-            
-            ++startRow
-            ++row
-            sheet.mergeCells(0, row, 4, row);
-            sheet.addCell(new Label(0, row, "Celkova suma:"))
-            sum = new Formula(5, row, "SUM(F" + startRow + ":F" + row + ")");
-            sheet.addCell(sum);
         }
-        
+        sheetSummary.addCell(new Label(0, sheetSummaryRow, name))
+        sheetSummary.addCell(new Number(1, sheetSummaryRow, subTotal))
+        ++sheetSummaryRow;
     } catch (SQLException e) {
-        println "No data found for ev_cislo: ${evCislo}"
+        println "No data found for ev_cislo: ${evCislo}" + e
     }
     
     for(int x = 0; x < 5; x++) {
-        cell=sheet.getColumnView(x);
-        cell.setAutosize(true);
-        sheet.setColumnView(x, cell);
+        cell=sheet.getColumnView(x)
+        cell.setAutosize(true)
+        sheet.setColumnView(x, cell)
     }    
 }
+++sheetSummaryRow
+sheetSummary.addCell(new Label(0, sheetSummaryRow, "Celkova suma:"))
+sheetSummary.addCell(new Number(1, sheetSummaryRow, total))
 
-workbook.write(); 
-workbook.close();
+for(int x = 0; x < 1; x++) {
+    cell=sheetSummary.getColumnView(x)
+    cell.setAutosize(true)
+    sheetSummary.setColumnView(x, cell)
+}    
+
+
+workbook.write() 
+workbook.close()
+sql.close()
+
 
 println "Report generated."
