@@ -7,13 +7,15 @@ import groovy.sql.Sql
 
 import java.sql.Date as SqlDate
 import java.sql.SQLException
+import java.util.HashMap
+import java.util.Map
 
 import jxl.*
 import jxl.write.*
 
 // Parameters to report. Limits for time period.
-def fromString = '2015-01-01'
-def toString = '2015-01-31'
+def fromString = '2015-03-01'
+def toString = '2015-03-31'
 def dateFrom = Date.parse('yyyy-MM-dd', fromString)
 def dateTo = Date.parse('yyyy-MM-dd', toString)
 
@@ -81,6 +83,7 @@ sql.eachRow(queryAllPersons) { stravnik ->
         int row = 0
         def lastDatum = null
         def lastDruh = null
+        def subSumTotal = new HashMap<Double, Integer>()
         sql.rows(queryDetail, [fromDate: from, toDate: to, evCislo: evCislo]).each {
             if (lastDatum == null || lastDruh == null || lastDatum != it.datum || lastDruh != it.druh) {
                 int col = 0
@@ -92,20 +95,33 @@ sql.eachRow(queryAllPersons) { stravnik ->
                 sheet.addCell(new Number(col++, row, it.pocet))
                 sheet.addCell(new Number(col++, row, it.cena1))
                 //Create a formula for adding cells
-                Formula sum = new Formula(col++, row, "D" + formulaRow + "*E" + formulaRow);
+                Formula sum = new Formula(col++, row, "D" + formulaRow + "*E" + formulaRow)
                 sheet.addCell(sum);
                 total += it.pocet * it.cena1 
-                subTotal += it.pocet * it.cena1 
+                subTotal += it.pocet * it.cena1
+                def count = subSumTotal.get(it.cena1)
+                count = (count == null) ? 1 : count + 1
+                subSumTotal.put(it.cena1, count)
             }
             lastDatum = it.datum
             lastDruh = it.druh
         }
         
+        def endRow = row + 1
         if (row > 0) {
+            ++row
+            ++row
+            subSumTotal.keySet().each { cenaZaJidlo ->
+                ++row
+                sheet.addCell(new Label(2, row, "Suma za j\u00EDdlo"))
+                sheet.addCell(new Number(3, row, subSumTotal.get(cenaZaJidlo)))
+                sheet.addCell(new Number(4, row, cenaZaJidlo))
+                sheet.addCell(new Number(5, row, cenaZaJidlo * subSumTotal.get(cenaZaJidlo)))
+            }
             ++row
             sheet.mergeCells(0, row, 4, row);
             sheet.addCell(new Label(0, row, "Celkova suma:"))
-            Formula sum = new Formula(5, row, "SUM(F2:F" + row + ")")
+            Formula sum = new Formula(5, row, "SUM(F2:F" + endRow + ")")
             sheet.addCell(sum)
         }
         sheetSummary.addCell(new Label(0, sheetSummaryRow, name))
