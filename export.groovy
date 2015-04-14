@@ -12,15 +12,15 @@ import jxl.*
 import jxl.write.*
 
 // Parameters to report. Limits for time period.
-def fromString = '2015-01-01'
-def toString = '2015-01-31'
+def fromString = '2015-03-01'
+def toString = '2015-03-31'
 def dateFrom = Date.parse('yyyy-MM-dd', fromString)
 def dateTo = Date.parse('yyyy-MM-dd', toString)
 
 println "Running report for period: ${dateFrom.format('dd.MM.yyyy')}-${dateTo.format('dd.MM.yyyy')}"
 
 // dsn name in odbc 32bit windows setup
-def dsn = "vis-firmy"
+def dsn = "vis-skoly"
 
 def from = new SqlDate(dateFrom.getTime())
 def to = new SqlDate(dateTo.getTime())
@@ -45,21 +45,14 @@ def sql = Sql.newInstance("jdbc:odbc:${dsn}", prop, "sun.jdbc.odbc.JdbcOdbcDrive
 // query to get all persons in system
 def queryAllPersons = "select * from stravnik"
 // query to get all orders between period and for specified person
-def queryDetail = "select ob.datum, ob.druh, ob.ev_cislo, ob.pocet, ji.nazev, ji.cena1 " + 
+def queryDetail = "select ob.datum, ob.druh, ob.ev_cislo, ob.pocet, ji.nazev, " +
+			"ji.cena1, ji.cena2, ji.cena3, ji.cena4, ji.cena5, ji.cena6, ji.cena7, ji.cena8, ji.cena9, ji.cena10 " + 
             "from objednav as ob, jidelnic as ji " + 
             "where ob.datum between :fromDate and :toDate " + 
             "and ji.datum = ob.datum " +
             "and ji.druh = ob.druh " +
             "and ob.ev_cislo = :evCislo " + 
             "order by ob.datum asc, ob.druh, ob.datcas_obj desc"
-// query to get summary for orders between period and for specified person
-def querySum = "select ji.cena1, sum(ob.pocet) as pocet " + 
-            "from objednav as ob, jidelnic as ji " + 
-            "where ob.datum between :fromDate and :toDate " + 
-            "and ji.datum = ob.datum " +
-            "and ji.druh = ob.druh " +
-            "and ob.ev_cislo = :evCislo " + 
-            "group by ji.cena1"
             
 def sheetSummary = workbook.createSheet('Summary', -1)
 def sheetSummaryRow = 0;
@@ -68,6 +61,7 @@ def total = 0.0
 sql.eachRow(queryAllPersons) { stravnik ->
     def name = stravnik.jmeno
     def evCislo = stravnik.ev_cislo
+    def cenovaSkupina = stravnik.cen_skup
     def sheet = workbook.createSheet(stravnik.jmeno, evCislo.intValue())
     sheet.addCell(new Label(0, 0, "Datum")) 
     sheet.addCell(new Label(1, 0, "Druh")) 
@@ -83,6 +77,31 @@ sql.eachRow(queryAllPersons) { stravnik ->
         def lastDruh = null
         sql.rows(queryDetail, [fromDate: from, toDate: to, evCislo: evCislo]).each {
             if (lastDatum == null || lastDruh == null || lastDatum != it.datum || lastDruh != it.druh) {
+				def cena 
+				switch (cenovaSkupina.trim()) {
+					case "1": cena = it.cena1
+							break
+					case "2": cena = it.cena2
+							break
+					case "3": cena = it.cena3
+							break
+					case "4": cena = it.cena4
+							break
+					case "5": cena = it.cena5
+							break
+					case "6": cena = it.cena6
+							break
+					case "7": cena = it.cena7
+							break
+					case "8": cena = it.cena8
+							break
+					case "9": cena = it.cena9
+							break
+					case "10": cena = it.cena10
+							break
+					default: 
+							println "Nondefined price for cen_skup: $cenovaSkupina"
+				}
                 int col = 0
                 row++
                 int formulaRow = row+1
@@ -90,12 +109,12 @@ sql.eachRow(queryAllPersons) { stravnik ->
                 sheet.addCell(new Label(col++, row, it.druh))
                 sheet.addCell(new Label(col++, row, it.nazev))
                 sheet.addCell(new Number(col++, row, it.pocet))
-                sheet.addCell(new Number(col++, row, it.cena1))
+                sheet.addCell(new Number(col++, row, cena))
                 //Create a formula for adding cells
                 Formula sum = new Formula(col++, row, "D" + formulaRow + "*E" + formulaRow);
                 sheet.addCell(sum);
-                total += it.pocet * it.cena1 
-                subTotal += it.pocet * it.cena1 
+                total += it.pocet * cena 
+                subTotal += it.pocet * cena
             }
             lastDatum = it.datum
             lastDruh = it.druh
