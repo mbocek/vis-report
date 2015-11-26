@@ -1,3 +1,6 @@
 /target
 /report*
 /data
+.settings
+.classpath
+.project
