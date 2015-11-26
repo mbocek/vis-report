@@ -21,7 +21,7 @@ println "Running report for: ${dateTo.format('dd.MM.yyyy')}"
 def to = new SqlDate(dateTo.getTime())
 
 // report path - can be full path or relative path 
-def outputFilePath = "daily-report-${dateTo.format('dd.MM.yyyy')}.xls"
+def outputFilePath = "reports/daily-report-${dateTo.format('dd.MM.yyyy')}.xls"
 def ws = new WorkbookSettings()
 ws.setEncoding("cp1250")
 def workbook = Workbook.createWorkbook(new File(outputFilePath), ws)
