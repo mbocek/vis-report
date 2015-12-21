@@ -38,14 +38,14 @@ prop.put("charSet", "cp1250");
 def sql = Sql.newInstance("jdbc:odbc:${dsn}", prop, "sun.jdbc.odbc.JdbcOdbcDriver")
 
 // query to get all orders for date
-def queryDetail = "select ob.datum, ob.druh, ob.ev_cislo, ob.pocet, ji.nazev, str.skupina_no, str.jmeno " +
+def queryDetail = "select ob.datum, ob.druh, ob.datcas_obj, ob.ev_cislo, ob.pocet, ji.nazev, str.skupina_no, str.jmeno " +
             "from objednav as ob, jidelnic as ji, stravnik as str " + 
             "where ob.datum = :toDate " + 
             "and ji.datum = ob.datum " +
             "and ji.druh = ob.druh " +
             "and ob.ev_cislo = str.ev_cislo " + 
             "and trim(ob.druh) IN ('1', '2', '3', '4', '5') " + 
-            "order by str.jmeno, ob.druh desc"
+            "order by str.jmeno, ob.datcas_obj, ob.druh desc"
 
 			
 // Setup sheet
@@ -72,18 +72,28 @@ sheet.addCell(new Label(col++, row, "Om\u00E1\u010Dka", format))
 sheet.addCell(new Label(col++, row, "Zeleninov\u00E9 a sladk\u00E9 j\u00EDdlo", format))
 sheet.addCell(new Label(col++, row, "Pol\u00E9vka", format))
 
+def lastEvCislo
+def lastDruh
 sql.rows(queryDetail, [toDate: to]).each {
-    col = 0
-	row++
-	sheet.addCell(new Label(col++, row, it.jmeno))
-	sheet.addCell(new Label(col++, row, it.druh))
-	sheet.addCell(new Label(col++, row, it.nazev))
-	sheet.addCell(new Number(col++, row, it.pocet))
-	sheet.addCell(new Formula(col++, row, "D${row + 1}*Setup!A${Integer.valueOf(it.skupina_no) + 1}"))
-	sheet.addCell(new Formula(col++, row, "D${row + 1}*Setup!B${Integer.valueOf(it.skupina_no) + 1}"))
-	sheet.addCell(new Formula(col++, row, "D${row + 1}*Setup!C${Integer.valueOf(it.skupina_no) + 1}"))
-	sheet.addCell(new Formula(col++, row, "D${row + 1}*Setup!D${Integer.valueOf(it.skupina_no) + 1}"))
-	sheet.addCell(new Formula(col++, row, "D${row + 1}*Setup!E${Integer.valueOf(it.skupina_no) + 1}"))
+	if (lastEvCislo == null) {
+		lastEvCislo = it.ev_cislo
+		lastDruh = it.druh
+	}
+	if (lastEvCislo != it.ev_cislo || lastDruh != it.druh) {
+		col = 0
+		row++
+		sheet.addCell(new Label(col++, row, it.jmeno))
+		sheet.addCell(new Label(col++, row, it.druh))
+		sheet.addCell(new Label(col++, row, it.nazev))
+		sheet.addCell(new Number(col++, row, it.pocet))
+		sheet.addCell(new Formula(col++, row, "D${row + 1}*Setup!A${Integer.valueOf(it.skupina_no) + 1}"))
+		sheet.addCell(new Formula(col++, row, "D${row + 1}*Setup!B${Integer.valueOf(it.skupina_no) + 1}"))
+		sheet.addCell(new Formula(col++, row, "D${row + 1}*Setup!C${Integer.valueOf(it.skupina_no) + 1}"))
+		sheet.addCell(new Formula(col++, row, "D${row + 1}*Setup!D${Integer.valueOf(it.skupina_no) + 1}"))
+		sheet.addCell(new Formula(col++, row, "D${row + 1}*Setup!E${Integer.valueOf(it.skupina_no) + 1}"))
+	}
+	lastEvCislo = it.ev_cislo
+	lastDruh = it.druh
 }
 
 for(int x = 0; x < 3; x++) {
