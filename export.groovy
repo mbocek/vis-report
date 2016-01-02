@@ -14,21 +14,22 @@ import jxl.*
 import jxl.write.*
 
 // Parameters to report. Limits for time period.
-def fromString = '2015-03-01'
-def toString = '2015-03-31'
+def fromString = '2015-11-01'
+def toString = '2015-11-30'
 def dateFrom = Date.parse('yyyy-MM-dd', fromString)
 def dateTo = Date.parse('yyyy-MM-dd', toString)
 
 println "Running report for period: ${dateFrom.format('dd.MM.yyyy')}-${dateTo.format('dd.MM.yyyy')}"
 
 // dsn name in odbc 32bit windows setup
+//def dsn = "vis-firmy"
 def dsn = "vis-skoly"
 
 def from = new SqlDate(dateFrom.getTime())
 def to = new SqlDate(dateTo.getTime())
 
 // report path - can be full path or relative path 
-def outputFilePath = "report-${fromString}-${toString}.xls"
+def outputFilePath = "report-${dsn}-${fromString}-${toString}.xls"
 def ws = new WorkbookSettings()
 ws.setEncoding("cp1250")
 def workbook = Workbook.createWorkbook(new File(outputFilePath), ws)
