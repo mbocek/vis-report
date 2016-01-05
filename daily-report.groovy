@@ -75,11 +75,7 @@ sheet.addCell(new Label(col++, row, "Pol\u00E9vka", format))
 def lastEvCislo
 def lastDruh
 sql.rows(queryDetail, [toDate: to]).each {
-	if (lastEvCislo == null) {
-		lastEvCislo = it.ev_cislo
-		lastDruh = it.druh
-	}
-	if (lastEvCislo != it.ev_cislo || lastDruh != it.druh) {
+	if (lastEvCislo == null || lastDruh == null || lastEvCislo != it.ev_cislo || lastDruh != it.druh) {
 		col = 0
 		row++
 		sheet.addCell(new Label(col++, row, it.jmeno))
