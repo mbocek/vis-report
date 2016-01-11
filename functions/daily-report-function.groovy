@@ -26,7 +26,7 @@ parseArgs = { args ->
  
 	def date
 	if (options.d) {
-		date = Date.parse('dd.MM.yyyy', toString)
+		date = Date.parse('dd.MM.yyyy', options.d)
 	} else {
 		date = new Date()
 	}
@@ -45,44 +45,20 @@ fillSetup = { sheetSetup ->
 
     def row = 0
     def col = 0
-	sheetSetup.addCell(new Label(col++, row, "Maso"))
-	sheetSetup.addCell(new Label(col++, row, "P\u0159\u00EDloha"))
-	sheetSetup.addCell(new Label(col++, row, "Om\u00E1\u010Dka"))
-	sheetSetup.addCell(new Label(col++, row, "Zeleninov\u00E9 a sladk\u00E9 j\u00EDdlo"))
-	sheetSetup.addCell(new Label(col++, row, "Pol\u00E9vka"))
+	sheetSetup.addCell(new Label(col++, row, "Koeficient"))
 	col = 0
 	row++
-	sheetSetup.addCell(new Number(col++, row, 50 / 1000))
-	sheetSetup.addCell(new Number(col++, row, 150 / 1000))
-	sheetSetup.addCell(new Number(col++, row, 100 / 1000))
-	sheetSetup.addCell(new Number(col++, row, 200 / 1000))
-	sheetSetup.addCell(new Number(col++, row, 200 / 1000))
+	sheetSetup.addCell(new Number(col++, row, 0.5/1000))
 	col = 0
 	row++
-	sheetSetup.addCell(new Number(col++, row, 100 / 1000))
-	sheetSetup.addCell(new Number(col++, row, 250 / 1000))
-	sheetSetup.addCell(new Number(col++, row, 200 / 1000))
-	sheetSetup.addCell(new Number(col++, row, 400 / 1000))
-	sheetSetup.addCell(new Number(col++, row, 330 / 1000))
+	sheetSetup.addCell(new Number(col++, row, 1/1000))
 	col = 0
 	row++
-	sheetSetup.addCell(new Number(col++, row, 100 / 1000))
-	sheetSetup.addCell(new Number(col++, row, 250 / 1000))
-	sheetSetup.addCell(new Number(col++, row, 200 / 1000))
-	sheetSetup.addCell(new Number(col++, row, 400 / 1000))
-	sheetSetup.addCell(new Number(col++, row, 330 / 1000))
+	sheetSetup.addCell(new Number(col++, row, 1/1000))
 	col = 0
 	row++
-	sheetSetup.addCell(new Number(col++, row, 70 / 1000))
-	sheetSetup.addCell(new Number(col++, row, 175 / 1000))
-	sheetSetup.addCell(new Number(col++, row, 150 / 1000))
-	sheetSetup.addCell(new Number(col++, row, 280 / 1000))
-	sheetSetup.addCell(new Number(col++, row, 250 / 1000))
+	sheetSetup.addCell(new Number(col++, row, 0.7/1000))
 	col = 0
 	row++
-	sheetSetup.addCell(new Number(col++, row, 100 / 1000))
-	sheetSetup.addCell(new Number(col++, row, 250 / 1000))
-	sheetSetup.addCell(new Number(col++, row, 200 / 1000))
-	sheetSetup.addCell(new Number(col++, row, 400 / 1000))
-	sheetSetup.addCell(new Number(col++, row, 330 / 1000))
+	sheetSetup.addCell(new Number(col++, row, 1/1000))
 }
