@@ -45,7 +45,7 @@ def queryDetail = "select ob.datum, ob.druh, ob.datcas_obj, ob.ev_cislo, ob.poce
             "and ji.druh = ob.druh " +
             "and ob.ev_cislo = str.ev_cislo " + 
             "and trim(ob.druh) IN ('1', '2', '3', '4', '5') " + 
-            "order by str.jmeno, ob.druh, ob.datcas_obj desc"
+            "order by str.kateg, str.jmeno, ob.druh, ob.datcas_obj desc"
 
 			
 // Setup sheet
