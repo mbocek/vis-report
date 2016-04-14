@@ -14,16 +14,17 @@ import jxl.*
 import jxl.write.*
 
 // Parameters to report. Limits for time period.
-def fromString = '2015-11-01'
-def toString = '2015-11-30'
+def fromString = '2016-03-01'
+def toString = '2016-03-31'
+
 def dateFrom = Date.parse('yyyy-MM-dd', fromString)
 def dateTo = Date.parse('yyyy-MM-dd', toString)
 
 println "Running report for period: ${dateFrom.format('dd.MM.yyyy')}-${dateTo.format('dd.MM.yyyy')}"
 
 // dsn name in odbc 32bit windows setup
-//def dsn = "vis-firmy"
-def dsn = "vis-skoly"
+def dsn = "vis-firmy"
+//def dsn = "vis-skolky"
 
 def from = new SqlDate(dateFrom.getTime())
 def to = new SqlDate(dateTo.getTime())
