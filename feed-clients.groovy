@@ -15,11 +15,10 @@ import groovy.json.JsonBuilder
 import groovyx.net.http.RESTClient
 import static groovyx.net.http.ContentType.*
 
-// dsn name in odbc 32bit windows setup
-def dsn = "vis-firmy"
-//def dsn = "vis-skolky"
-def url = 'http://10.0.0.7:8080/'
+evaluate(new File("./functions/feed-clients-function.groovy"))
 
+def (String dsn, String url) = parseArgs(args)
+println "Feeding clients from dsn: ${dsn} in url: ${url}"
 
 def json = new JsonBuilder()
 
