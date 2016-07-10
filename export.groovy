@@ -14,8 +14,8 @@ import jxl.*
 import jxl.write.*
 
 // Parameters to report. Limits for time period.
-def fromString = '2016-03-01'
-def toString = '2016-03-31'
+def fromString = '2016-05-01'
+def toString = '2016-05-31'
 
 def dateFrom = Date.parse('yyyy-MM-dd', fromString)
 def dateTo = Date.parse('yyyy-MM-dd', toString)
