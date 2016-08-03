@@ -10,27 +10,65 @@ import java.sql.SQLException
 import java.util.HashMap
 import java.util.Map
 
+import groovy.time.TimeCategory
+
 import jxl.*
 import jxl.write.*
 
-// Parameters to report. Limits for time period.
-def fromString = '2016-05-01'
-def toString = '2016-05-31'
-
-def dateFrom = Date.parse('yyyy-MM-dd', fromString)
-def dateTo = Date.parse('yyyy-MM-dd', toString)
-
-println "Running report for period: ${dateFrom.format('dd.MM.yyyy')}-${dateTo.format('dd.MM.yyyy')}"
+def dateFileFormat = 'dd.MM.yyyy'
 
 // dsn name in odbc 32bit windows setup
 def dsn = "vis-firmy"
 //def dsn = "vis-skolky"
 
+def cli = new CliBuilder(usage: "export -[hsm]")
+// Create the list of options.
+cli.with {
+    h longOpt: 'help', 'Show usage information'
+    s longOpt: 'source', args: 1, argName: 'source', 'Name of data source', required: true
+    m longOpt: 'month', args: 1, argName: 'month', 'Report per month in shift: e.g. 0 current, -1 previouse month', required: false
+}
+
+def options = cli.parse(args)
+// Show usage text when -h or --help option is used.
+options || System.exit(1)
+
+if (options.h) {
+    cli.usage()
+    System.exit(1)
+}
+
+if (options.s) {
+    dsn = options.s
+} 
+
+def monthShift
+if (options.m) {
+    monthShift = new Integer(options.m)
+} else {
+    monthShift = 0
+}
+
+def calendar = Calendar.getInstance()
+calendar.add(Calendar.MONTH, monthShift)
+calendar.set(Calendar.DATE, 1)
+calendar.set(Calendar.MILLISECOND, 0)
+calendar.set(Calendar.SECOND, 0)
+calendar.set(Calendar.MINUTE, 0)
+calendar.set(Calendar.HOUR_OF_DAY, 0)
+def dateFrom = calendar.clone().getTime()
+calendar.add(Calendar.MONTH, 1)
+calendar.add(Calendar.SECOND, -1)
+def dateTo = calendar.clone().getTime()
+
+println "Running report for period: ${dateFrom.format('dd.MM.yyyy')}-${dateTo.format('dd.MM.yyyy')}"
+println "DSN: ${dsn}"
+
 def from = new SqlDate(dateFrom.getTime())
 def to = new SqlDate(dateTo.getTime())
 
 // report path - can be full path or relative path 
-def outputFilePath = "report-${dsn}-${fromString}-${toString}.xls"
+def outputFilePath = "reports/report-${dsn}-${dateFrom.format('yyyy-MM-dd')}-${dateTo.format('yyyy-MM-dd')}.xls"
 def ws = new WorkbookSettings()
 ws.setEncoding("cp1250")
 def workbook = Workbook.createWorkbook(new File(outputFilePath), ws)

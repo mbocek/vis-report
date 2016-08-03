@@ -7,4 +7,4 @@ IF "%JAVA_HOME%"=="" echo JAVA_HOME environment variable should point to java 32
 
 if exist env.bat @call env.bat
 
-%GROOVY_HOME%\bin\groovy -cp lib/jxl.jar export.groovy
+%GROOVY_HOME%\bin\groovy -cp lib/jxl.jar export.groovy -s vis-skoly -m 0
