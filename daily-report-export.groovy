@@ -21,7 +21,7 @@ println "Running report for: ${dateTo.format('dd.MM.yyyy')}"
 def to = new SqlDate(dateTo.getTime())
 
 // report path - can be full path or relative path 
-def outputFilePath = "reports/daily-report-${dateTo.format('dd.MM.yyyy')}.xls"
+def outputFilePath = "reports/daily-report-export-${dateTo.format('dd.MM.yyyy')}.xls"
 def ws = new WorkbookSettings()
 ws.setEncoding("cp1250")
 def workbook = Workbook.createWorkbook(new File(outputFilePath), ws)
@@ -45,24 +45,12 @@ def queryDetail = "select ob.datum, ob.druh, sum(ob.pocet) pocet, ji.nazev, kat.
             "and ji.druh = ob.druh " +
             "and ob.ev_cislo = str.ev_cislo " + 
             "and str.kateg = kat.kateg " + 
-            //"and trim(ob.druh) IN ('1', '2', '3', '4', '5') " + 
             "group by ob.datum, ob.druh, kat.kateg"
 
 def koeficientSQL = "select skupina, druh, koeficient " +
             "from fin_lim " +
             "order by druh, skupina"
 def koeficientRows = sql.rows(koeficientSQL)
-
-def koeficient = { druh, skupina, rows ->
-    float result = 1F
-    rows.each {
-        if (it.druh == druh && it.skupina == skupina) {
-            result = it.koeficient
-            return result
-        }
-    }
-    return result
-}
 			
 // report sheet
 def sheet = workbook.createSheet('Report', -1)
@@ -95,45 +83,44 @@ sql.rows(queryDetail, [toDate: to]).each {
         cellFormat.setBorder(Border.TOP, BorderLineStyle.THIN);
         format = new WritableCellFormat(cellFormat)
     }
-	if (lastEvCislo == null || lastDruh == null || lastDruh != it.druh) {
-		col = 0
-		row++
-		sheet.addCell(new Label(col++, row, it.kateg, format))
-		sheet.addCell(new Label(col++, row, it.popis.trim(), format))
-		sheet.addCell(new Label(col++, row, it.druh, format))
-		sheet.addCell(new Label(col++, row, it.nazev.trim(), format))
-		cissurData = it.cissur.split("\\r?\\n")
-		cissurData.each() { cissurItem ->
-            if (col == 0) {
-                (0..3).each {
-                    sheet.addCell(new Label(col++, row, "", format))
-                }
-            }
-            
-            def koef = koeficient(it.druh, it.skupina_no, koeficientRows)
 
-			cissurCode = cissurItem.split(' ')[0]
-			cissurResult = sql.rows("select * from suroviny where cissur = :cissur", [cissur: cissurCode])
-            // always only one row
-            cissurResult.each { suroviny ->
-                sheet.addCell(new Number(col++, row, it.pocet, format))
-                sheet.addCell(new Label(col++, row, suroviny.nazev, format))
-                sheet.addCell(new Formula(col++, row, "${suroviny.hmotnost}*${koef}", format))
-                sheet.addCell(new Formula(col++, row, "${suroviny.hmotnost_m}*${koef}" , format))
-                sheet.addCell(new Formula(col++, row, "E${row + 1}*G${row + 1}/1000", format))
-                sheet.addCell(new Formula(col++, row, "E${row + 1}*H${row + 1}/1000", format))
-			}
-            col = 0 // reset to subset
-            if( cissurData.last() == cissurItem) {
-                row
-            } else {
-                row++
-                cellFormat = new WritableCellFormat()
-                cellFormat.setBorder(Border.BOTTOM, BorderLineStyle.NONE);
-                format = new WritableCellFormat(cellFormat)
-            } 
-		}
-	}
+    col = 0
+    row++
+    sheet.addCell(new Label(col++, row, it.kateg, format))
+    sheet.addCell(new Label(col++, row, it.popis.trim(), format))
+    sheet.addCell(new Label(col++, row, it.druh, format))
+    sheet.addCell(new Label(col++, row, it.nazev.trim(), format))
+    cissurData = it.cissur.split("\\r?\\n")
+    cissurData.each() { cissurItem ->
+        if (col == 0) {
+            (0..3).each {
+                sheet.addCell(new Label(col++, row, "", format))
+            }
+        }
+        
+        def koef = koeficient(it.druh, it.skupina_no, koeficientRows)
+
+        cissurCode = cissurItem.split(' ')[0]
+        cissurResult = sql.rows("select * from suroviny where cissur = :cissur", [cissur: cissurCode])
+        // always only one row
+        cissurResult.each { suroviny ->
+            sheet.addCell(new Number(col++, row, it.pocet, format))
+            sheet.addCell(new Label(col++, row, suroviny.nazev, format))
+            sheet.addCell(new Formula(col++, row, "${suroviny.hmotnost}*${koef}", format))
+            sheet.addCell(new Formula(col++, row, "${suroviny.hmotnost_m}*${koef}" , format))
+            sheet.addCell(new Formula(col++, row, "E${row + 1}*G${row + 1}/1000", format))
+            sheet.addCell(new Formula(col++, row, "E${row + 1}*H${row + 1}/1000", format))
+        }
+        col = 0 // reset to subset
+        if( cissurData.last() == cissurItem) {
+            row
+        } else {
+            row++
+            cellFormat = new WritableCellFormat()
+            cellFormat.setBorder(Border.BOTTOM, BorderLineStyle.NONE);
+            format = new WritableCellFormat(cellFormat)
+        } 
+    }
 	lastDruh = it.druh
     lastKateg = it.kateg
 }

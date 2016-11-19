@@ -41,24 +41,13 @@ parseArgs = { args ->
 	[date, source]
 }
 
-fillSetup = { sheetSetup ->
-
-    def row = 0
-    def col = 0
-	sheetSetup.addCell(new Label(col++, row, "Koeficient"))
-	col = 0
-	row++
-	sheetSetup.addCell(new Number(col++, row, 0.5/1000))
-	col = 0
-	row++
-	sheetSetup.addCell(new Number(col++, row, 1/1000))
-	col = 0
-	row++
-	sheetSetup.addCell(new Number(col++, row, 1/1000))
-	col = 0
-	row++
-	sheetSetup.addCell(new Number(col++, row, 0.7/1000))
-	col = 0
-	row++
-	sheetSetup.addCell(new Number(col++, row, 1/1000))
+koeficient = { druh, skupina, rows ->
+    float result = 1F
+    rows.each {
+        if (it.druh == druh && it.skupina == skupina) {
+            result = it.koeficient
+            return result
+        }
+    }
+    return result
 }
