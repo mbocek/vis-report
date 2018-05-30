@@ -88,7 +88,8 @@ def sql = Sql.newInstance("jdbc:odbc:${dsn}", prop, "sun.jdbc.odbc.JdbcOdbcDrive
 def queryAllPersons = "select * from stravnik"
 // query to get all orders between period and for specified person
 def queryDetail = "select ob.datum, ob.druh, ob.ev_cislo, ob.pocet, ji.nazev, " +
-			"ji.cena1, ji.cena2, ji.cena3, ji.cena4, ji.cena5, ji.cena6, ji.cena7, ji.cena8, ji.cena9, ji.cena10 " + 
+			"ji.cena1, ji.cena2, ji.cena3, ji.cena4, ji.cena5, ji.cena6, ji.cena7, ji.cena8, ji.cena9, ji.cena10, " + 
+            "ji.cena11, ji.cena12, ji.cena13, ji.cena14, ji.cena15, ji.cena16, ji.cena17, ji.cena18, ji.cena19, ji.cena20 " +
             "from objednav as ob, jidelnic as ji " + 
             "where ob.datum between :fromDate and :toDate " + 
             "and ji.datum = ob.datum " +
@@ -141,6 +142,26 @@ sql.eachRow(queryAllPersons) { stravnik ->
 					case "9": cena = it.cena9
 							break
 					case "10": cena = it.cena10
+							break
+					case "11": cena = it.cena11
+							break
+					case "12": cena = it.cena12
+							break
+					case "13": cena = it.cena13
+							break
+					case "14": cena = it.cena14
+							break
+					case "15": cena = it.cena15
+							break
+					case "16": cena = it.cena16
+							break
+					case "17": cena = it.cena17
+							break
+					case "18": cena = it.cena18
+							break
+					case "19": cena = it.cena19
+							break
+					case "20": cena = it.cena20
 							break
 					default: 
 							println "Nondefined price for cen_skup: $cenovaSkupina"
