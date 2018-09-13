@@ -13,7 +13,7 @@ import jxl.*
 import jxl.write.*
 import jxl.format.*
 
-evaluate(new File("./functions/daily-report-function.groovy"))
+evaluate(new File("./function/daily-report-function.groovy"))
 
 def (Date dateTo, String dsn) = parseArgs(args)
 println "Running report for: ${dateTo.format('dd.MM.yyyy')}"
@@ -21,7 +21,7 @@ println "Running report for: ${dateTo.format('dd.MM.yyyy')}"
 def to = new SqlDate(dateTo.getTime())
 
 // report path - can be full path or relative path 
-def outputFilePath = "reports/daily-report-export-${dateTo.format('dd.MM.yyyy')}.xls"
+def outputFilePath = "reports/daily-report-customer-${dateTo.format('dd.MM.yyyy')}.xls"
 def ws = new WorkbookSettings()
 ws.setEncoding("cp1250")
 def workbook = Workbook.createWorkbook(new File(outputFilePath), ws)
@@ -45,55 +45,58 @@ def queryDetail = "select ob.datum, ob.druh, sum(ob.pocet) pocet, ji.nazev, kat.
             "and ji.druh = ob.druh " +
             "and ob.ev_cislo = str.ev_cislo " + 
             "and str.kateg = kat.kateg " + 
-            "group by ob.datum, ob.druh, kat.kateg"
+            "group by ob.datum, kat.kateg, ob.druh"
 
 def koeficientSQL = "select skupina, druh, koeficient " +
             "from fin_lim " +
             "order by druh, skupina"
 def koeficientRows = sql.rows(koeficientSQL)
-			
+
 // report sheet
 def sheet = workbook.createSheet('Report', -1)
 
 def row = 0
 def col = 0
 
-cellFormat = new WritableCellFormat()
-format = new WritableCellFormat(cellFormat)
-format.setBackground(Colour.LIGHT_BLUE)
+colours = [Colour.LIGHT_GREEN, Colour.LIGHT_TURQUOISE, Colour.VERY_LIGHT_YELLOW]
 
-sheet.addCell(new Label(col++, row, "Kategorie", format))
-sheet.addCell(new Label(col++, row, "N\u00E1zev kategorie", format))
-sheet.addCell(new Label(col++, row, "Druh j\u00EDdla", format))
-sheet.addCell(new Label(col++, row, "N\u00E1zev j\u00EDdla", format))
-sheet.addCell(new Label(col++, row, "Po\u010Det porc\u00ED", format))
-sheet.addCell(new Label(col++, row, "Suroviny", format))
-sheet.addCell(new Label(col++, row, "Jenotkovy objem", format))
-sheet.addCell(new Label(col++, row, "Z toho masa", format))
-sheet.addCell(new Label(col++, row, "Celkovy objem", format))
-sheet.addCell(new Label(col++, row, "Z toho masa", format))
-
-def lastEvCislo
 def lastDruh
 def lastKateg
 colorIndex = 0
 sql.rows(queryDetail, [toDate: to]).each {
     if (lastKateg == null || lastKateg != it.kateg) {
+        if (lastKateg != null && lastKateg != it.kateg) {
+            row++;
+            row++;
+            row++;
+        }
         cellFormat = new WritableCellFormat()
-        cellFormat.setBorder(Border.TOP, BorderLineStyle.THIN);
         format = new WritableCellFormat(cellFormat)
+        format.setBackground(Colour.LIGHT_BLUE)
+
+        sheet.addCell(new Label(col++, row, "Odb\u011Bratel", format))
+        sheet.addCell(new Label(col++, row, "N\u00E1zev j\u00EDdla", format))
+        sheet.addCell(new Label(col++, row, "Po\u010Det porc\u00ED", format))
+        sheet.addCell(new Label(col++, row, "Suroviny", format))
+        sheet.addCell(new Label(col++, row, "Jenotkovy objem", format))
+        sheet.addCell(new Label(col++, row, "Z toho masa", format))
+        sheet.addCell(new Label(col++, row, "Celkovy objem", format))
+        sheet.addCell(new Label(col++, row, "Z toho masa", format))
+
+        cellFormat = new WritableCellFormat()
+        format = new WritableCellFormat(cellFormat)
+        format.setBackground(colours[colorIndex % colours.size()])
+        colorIndex++
     }
 
     col = 0
     row++
-    sheet.addCell(new Label(col++, row, it.kateg, format))
     sheet.addCell(new Label(col++, row, it.popis.trim(), format))
-    sheet.addCell(new Label(col++, row, it.druh, format))
     sheet.addCell(new Label(col++, row, it.nazev.trim(), format))
     cissurData = it.cissur.split("\\r?\\n")
     cissurData.each() { cissurItem ->
         if (col == 0) {
-            (0..3).each {
+            (0..1).each {
                 sheet.addCell(new Label(col++, row, "", format))
             }
         }
@@ -108,19 +111,13 @@ sql.rows(queryDetail, [toDate: to]).each {
             sheet.addCell(new Label(col++, row, suroviny.nazev, format))
             sheet.addCell(new Formula(col++, row, "${suroviny.hmotnost}*${koef}", format))
             sheet.addCell(new Formula(col++, row, "${suroviny.hmotnost_m}*${koef}" , format))
-            sheet.addCell(new Formula(col++, row, "E${row + 1}*G${row + 1}/1000", format))
-            sheet.addCell(new Formula(col++, row, "E${row + 1}*H${row + 1}/1000", format))
+            sheet.addCell(new Formula(col++, row, "C${row + 1}*E${row + 1}/1000", format))
+            sheet.addCell(new Formula(col++, row, "C${row + 1}*F${row + 1}/1000", format))
         }
         col = 0 // reset to subset
-        if( cissurData.last() == cissurItem) {
-            row
-        } else {
-            row++
-            cellFormat = new WritableCellFormat()
-            cellFormat.setBorder(Border.BOTTOM, BorderLineStyle.NONE);
-            format = new WritableCellFormat(cellFormat)
-        } 
+        (cissurData.last() == cissurItem) ? row : row++
     }
+
 	lastDruh = it.druh
     lastKateg = it.kateg
 }

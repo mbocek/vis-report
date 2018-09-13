@@ -15,7 +15,7 @@ import groovy.json.JsonBuilder
 import groovyx.net.http.RESTClient
 import static groovyx.net.http.ContentType.*
 
-evaluate(new File("./functions/FeedFunction.groovy"))
+evaluate(new File("./function/FeedFunction.groovy"))
 printHeaderIfNeeded("feed-clients")
 
 def (String dsn, String url) = parseArgs(args)

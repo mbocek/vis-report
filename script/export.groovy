@@ -21,12 +21,13 @@ def dateFileFormat = 'dd.MM.yyyy'
 def dsn = "vis-firmy"
 //def dsn = "vis-skolky"
 
-def cli = new CliBuilder(usage: "export -[hsm]")
+def cli = new CliBuilder(usage: "export -[hsmr]")
 // Create the list of options.
 cli.with {
     h longOpt: 'help', 'Show usage information'
     s longOpt: 'source', args: 1, argName: 'source', 'Name of data source', required: true
     m longOpt: 'month', args: 1, argName: 'month', 'Report per month in shift: e.g. 0 current, -1 previouse month', required: false
+    r longOpt: 'report', args: 1, argName: 'report', 'Report direcotry', required: false
 }
 
 def options = cli.parse(args)
@@ -42,12 +43,8 @@ if (options.s) {
     dsn = options.s
 } 
 
-def monthShift
-if (options.m) {
-    monthShift = new Integer(options.m)
-} else {
-    monthShift = 0
-}
+def monthShift = options.m ? new Integer(options.m) : 0
+def reports = options.r ? options.r : "../reports"
 
 def calendar = Calendar.getInstance()
 calendar.add(Calendar.MONTH, monthShift)
@@ -68,7 +65,7 @@ def from = new SqlDate(dateFrom.getTime())
 def to = new SqlDate(dateTo.getTime())
 
 // report path - can be full path or relative path 
-def outputFilePath = "reports/report-${dsn}-${dateFrom.format('yyyy-MM-dd')}-${dateTo.format('yyyy-MM-dd')}.xls"
+def outputFilePath = "${reports}/report-${dsn}-${dateFrom.format('yyyy-MM-dd')}-${dateTo.format('yyyy-MM-dd')}.xls"
 def ws = new WorkbookSettings()
 ws.setEncoding("cp1250")
 def workbook = Workbook.createWorkbook(new File(outputFilePath), ws)
