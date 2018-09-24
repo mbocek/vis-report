@@ -86,7 +86,8 @@ def queryAllPersons = "select * from stravnik"
 // query to get all orders between period and for specified person
 def queryDetail = "select ob.datum, ob.druh, ob.ev_cislo, ob.pocet, ji.nazev, " +
 			"ji.cena1, ji.cena2, ji.cena3, ji.cena4, ji.cena5, ji.cena6, ji.cena7, ji.cena8, ji.cena9, ji.cena10, " + 
-            "ji.cena11, ji.cena12, ji.cena13, ji.cena14, ji.cena15, ji.cena16, ji.cena17, ji.cena18, ji.cena19, ji.cena20, ji.cena21 " +
+            "ji.cena11, ji.cena12, ji.cena13, ji.cena14, ji.cena15, ji.cena16, ji.cena17, ji.cena18, ji.cena19, ji.cena20, " + 
+			"ji.cena21, ji.cena22 " +
             "from objednav as ob, jidelnic as ji " + 
             "where ob.datum between :fromDate and :toDate " + 
             "and ji.datum = ob.datum " +
@@ -161,6 +162,8 @@ sql.eachRow(queryAllPersons) { stravnik ->
 					case "20": cena = it.cena20
 							break
 					case "21": cena = it.cena21
+							break
+					case "22": cena = it.cena22
 							break
 					default: 
 							println "Nondefined price for cen_skup: $cenovaSkupina"
