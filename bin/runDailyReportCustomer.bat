@@ -7,4 +7,4 @@ set SCRIPT_CLASS_PATH=../lib/jxl.jar
 set SCRIPT_PATH=../script/daily-report-customer.groovy
 set SCRIPT_DATA_SOURCE=vis-skoly
 
-%GROOVY_HOME%\bin\groovy -cp %SCRIPT_CLASS_PATH% %SCRIPT_PATH% -s %SCRIPT_DATA_SOURCE%
+%GROOVY_HOME%\bin\groovy -cp %SCRIPT_CLASS_PATH% %SCRIPT_PATH% -s %SCRIPT_DATA_SOURCE% %*
