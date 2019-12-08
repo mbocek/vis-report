@@ -9,17 +9,30 @@ import java.sql.Date as SqlDate
 import java.sql.SQLException
 import java.util.HashMap
 import java.util.Map
+import java.util.logging.Logger
+import java.util.logging.LogManager
+import java.util.logging.FileHandler
+import java.util.logging.Handler
+import java.util.logging.SimpleFormatter
 
 import groovy.time.TimeCategory
+import groovy.time.TimeDuration
 
 import jxl.*
 import jxl.write.*
+
+System.setProperty("java.util.logging.SimpleFormatter.format", '%1$tF %1$tT %4$s %5$s%6$s%n')
+Logger logger = Logger.getLogger("export")
+FileHandler fh = new FileHandler("export.log", true)
+fh.setFormatter(new SimpleFormatter())
+logger.addHandler(fh)
 
 def dateFileFormat = 'dd.MM.yyyy'
 
 // dsn name in odbc 32bit windows setup
 def dsn = "vis-firmy"
 //def dsn = "vis-skolky"
+def startTime = new Date()
 
 def cli = new CliBuilder(usage: "export -[hsmr]")
 // Create the list of options.
@@ -58,8 +71,8 @@ calendar.add(Calendar.MONTH, 1)
 calendar.add(Calendar.SECOND, -1)
 def dateTo = calendar.clone().getTime()
 
-println "Running report for period: ${dateFrom.format('dd.MM.yyyy')}-${dateTo.format('dd.MM.yyyy')}"
-println "DSN: ${dsn}"
+logger.info("Running report for period: ${dateFrom.format('dd.MM.yyyy')}-${dateTo.format('dd.MM.yyyy')}")
+logger.info("DSN: ${dsn}")
 
 def from = new SqlDate(dateFrom.getTime())
 def to = new SqlDate(dateTo.getTime())
@@ -85,9 +98,7 @@ def sql = Sql.newInstance("jdbc:odbc:${dsn}", prop, "sun.jdbc.odbc.JdbcOdbcDrive
 def queryAllPersons = "select * from stravnik"
 // query to get all orders between period and for specified person
 def queryDetail = "select ob.datum, ob.druh, ob.ev_cislo, ob.pocet, ji.nazev, " +
-			"ji.cena1, ji.cena2, ji.cena3, ji.cena4, ji.cena5, ji.cena6, ji.cena7, ji.cena8, ji.cena9, ji.cena10, " + 
-            "ji.cena11, ji.cena12, ji.cena13, ji.cena14, ji.cena15, ji.cena16, ji.cena17, ji.cena18, ji.cena19, ji.cena20, " + 
-			"ji.cena21, ji.cena22, ji.cena23 , ji.cena24 , ji.cena25, ji.cena26, ji.cena27, ji.cena28, ji.cena29 , ji.cena30 " +
+			"ji.* " +
             "from objednav as ob, jidelnic as ji " + 
             "where ob.datum between :fromDate and :toDate " + 
             "and ji.datum = ob.datum " +
@@ -98,11 +109,10 @@ def queryDetail = "select ob.datum, ob.druh, ob.ev_cislo, ob.pocet, ji.nazev, " 
 def sheetSummary = workbook.createSheet('Summary', -1)
 def sheetSummaryRow = 0;
 def total = 0.0
-
 sql.eachRow(queryAllPersons) { stravnik ->
     def name = stravnik.jmeno
     def evCislo = stravnik.ev_cislo
-    def cenovaSkupina = stravnik.cen_skup
+    def cenovaSkupina = stravnik.cen_skup.trim()
     def sheet = workbook.createSheet(stravnik.jmeno, evCislo.intValue())
     sheet.addCell(new Label(0, 0, "Datum")) 
     sheet.addCell(new Label(1, 0, "Druh")) 
@@ -117,73 +127,15 @@ sql.eachRow(queryAllPersons) { stravnik ->
         def lastDatum = null
         def lastDruh = null
         def subSumTotal = new HashMap<Double, Integer>()
+        def script = new GroovyShell()
+        def binding = new Binding()
         sql.rows(queryDetail, [fromDate: from, toDate: to, evCislo: evCislo]).each {
             if (lastDatum == null || lastDruh == null || lastDatum != it.datum || lastDruh != it.druh) {
-				def cena 
-				switch (cenovaSkupina.trim()) {
-					case "1": cena = it.cena1
-							break
-					case "2": cena = it.cena2
-							break
-					case "3": cena = it.cena3
-							break
-					case "4": cena = it.cena4
-							break
-					case "5": cena = it.cena5
-							break
-					case "6": cena = it.cena6
-							break
-					case "7": cena = it.cena7
-							break
-					case "8": cena = it.cena8
-							break
-					case "9": cena = it.cena9
-							break
-					case "10": cena = it.cena10
-							break
-					case "11": cena = it.cena11
-							break
-					case "12": cena = it.cena12
-							break
-					case "13": cena = it.cena13
-							break
-					case "14": cena = it.cena14
-							break
-					case "15": cena = it.cena15
-							break
-					case "16": cena = it.cena16
-							break
-					case "17": cena = it.cena17
-							break
-					case "18": cena = it.cena18
-							break
-					case "19": cena = it.cena19
-							break
-					case "20": cena = it.cena20
-							break
-					case "21": cena = it.cena21
-							break
-					case "22": cena = it.cena22
-							break
-					case "23": cena = it.cena23
-							break
-					case "24": cena = it.cena24
-							break
-					case "25": cena = it.cena25
-							break
-					case "26": cena = it.cena26
-							break
-					case "27": cena = it.cena27
-							break
-					case "28": cena = it.cena28
-							break
-					case "29": cena = it.cena29
-							break
-					case "30": cena = it.cena30
-							break
-					default: 
-							println "Nondefined price for cen_skup: $cenovaSkupina"
-				}
+                // dynamic evaluation of column name
+                def columnName = "it.cena" + "${cenovaSkupina}"
+                script.setVariable("it", it)
+				def cena = script.evaluate("${columnName}")
+                
                 int col = 0
                 row++
                 int formulaRow = row+1
@@ -226,7 +178,7 @@ sql.eachRow(queryAllPersons) { stravnik ->
         sheetSummary.addCell(new Number(1, sheetSummaryRow, subTotal))
         ++sheetSummaryRow;
     } catch (SQLException e) {
-        println "No data found for ev_cislo: ${evCislo}" + e
+        logger.error("No data found for ev_cislo: ${evCislo}" + e)
     }
     
     for(int x = 0; x < 5; x++) {
@@ -250,5 +202,5 @@ workbook.write()
 workbook.close()
 sql.close()
 
-
-println "Report generated."
+TimeDuration td = TimeCategory.minus(new Date(), startTime)
+logger.info("Report generated. (${td})")
