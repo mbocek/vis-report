@@ -113,7 +113,8 @@ sql.eachRow(queryAllPersons) { stravnik ->
     def name = stravnik.jmeno
     def evCislo = stravnik.ev_cislo
     def cenovaSkupina = stravnik.cen_skup.trim()
-    def sheet = workbook.createSheet(stravnik.jmeno, evCislo.intValue())
+	def sheetName = evCislo + " - " + stravnik.jmeno
+    def sheet = workbook.createSheet(sheetName.substring(0, sheetName.length() > 31 ? 31 : sheetName.length()), evCislo.intValue())
     sheet.addCell(new Label(0, 0, "Datum")) 
     sheet.addCell(new Label(1, 0, "Druh")) 
     sheet.addCell(new Label(2, 0, "J\u00EDdlo")) 
